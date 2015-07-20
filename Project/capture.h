@@ -14,6 +14,20 @@ public:
 	glm::vec4 vertices[3];
 };
 
+class pixel
+{
+public:
+	glm::vec4 position;
+	unsigned char RGB[3];
+	pixel()
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			RGB[i] = 0;
+		}
+	}
+};
+
 void capture(const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const int g_vertex_buffer_data_size, const GLfloat g_color_buffer_data[]);
 
 #endif

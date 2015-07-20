@@ -4,6 +4,8 @@
 
 using namespace std;
 
+bool check = true;
+
 void capture(const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const int g_vertex_buffer_data_size, const GLfloat g_color_buffer_data[])
 {
 	vector<triangle> triangles(g_vertex_buffer_data_size / 3 / 3);
@@ -22,17 +24,6 @@ void capture(const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const i
 			triangles[i / 3].vertices[i % 3][j] /= 2; // compress the range from 0~2 to 0~1
 		}
 	}
-	/*for (int i = 0; i < triangles.size(); i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			for (int k = 0; k < 4; k++)
-			{
-				cout << triangles[i].vertices[j][k] << " ";
-			}
-			cout << endl;
-		}
-	}*/
 
 	ilInit();
 	int width = viewportSize[2] - viewportSize[0], height = viewportSize[3] - viewportSize[1];
@@ -40,24 +31,54 @@ void capture(const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const i
 	int sizeOfByte = sizeof(unsigned char);
 	int theSize = width * height * sizeOfByte * bytesToUsePerPixel;
 	unsigned char* imData = new unsigned char [theSize];
-	
+	vector< vector<pixel> > viewport(height, vector<pixel>(width));
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			viewport[i][j].position = glm::vec4(1.0 / width * j, 1.0 / height * i, 1.0, 1.0);
+		}
+	}
+
 	for (int i = 0; i < triangles.size(); i++)
 	{
+		triangle triangleOnPlane;
+		int screenX, screenY;
 		for (int j = 0; j < 3; j++)
 		{
-			int screenX = triangles[i].vertices[j].x * width, screenY = triangles[i].vertices[j].y * height;
-			int index = ((screenY - 1) * width + screenX) * 3;
-			if (index < 0)
+			screenX = triangles[i].vertices[j].x * width, screenY = triangles[i].vertices[j].y * height;
+			triangleOnPlane.vertices[j] = glm::vec4(screenX, screenY, 0.0, 1.0);
+			for (int k = 0; k < 3; k++)
 			{
-				index = 0;
+				viewport[screenY][screenX].RGB[k] = 255;
 			}
-			for (int l = 0; l < 21; l += 3)
+		}
+		for (int j = 0; j < 3; j++)
+		{
+			glm::vec4 vector = triangleOnPlane.vertices[(j + 1) % 3] - triangleOnPlane.vertices[j % 3];
+			float len = glm::length(vector);
+			glm::vec4 normalizedVec = glm::normalize(vector);
+			int scale = 1;
+			vector = (float)scale * normalizedVec;
+			while (glm::length(vector) < len)
 			{
 				for (int k = 0; k < 3; k++)
 				{
-					imData[index + k + l] = 0;
+					viewport[triangleOnPlane.vertices[j].y + (int)vector.y][triangleOnPlane.vertices[j].x + (int)vector.x].RGB[k] = 255;
 				}
+				++scale;
+				vector = (float)scale * normalizedVec;
 			}
+		}
+	}
+
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			imData[3 * (i * width + j)] = viewport[i][j].RGB[0];
+			imData[3 * (i * width + j) + 1] = viewport[i][j].RGB[1];
+			imData[3 * (i * width + j) + 2] = viewport[i][j].RGB[2];
 		}
 	}
 

@@ -1,12 +1,16 @@
 #ifndef _CAPTURE_H
 #define _CAPTURE_H
 
+#define GLM_SWIZZLE
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <IL/il.h>
 #include <IL/ilu.h>
+#include <cstdio>
+#include <iostream>
 #include <vector>
+#include <ctime>
 
 class triangle
 {
@@ -18,12 +22,14 @@ class pixel
 {
 public:
 	glm::vec4 position;
-	unsigned char RGB[3];
+	unsigned char RGB[4];
 	pixel()
 	{
+		GLfloat clearColor[4];
+		glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColor);
 		for (int i = 0; i < 3; i++)
 		{
-			RGB[i] = 0;
+			RGB[i] = static_cast<unsigned char>(255 * clearColor[i]);
 		}
 	}
 };

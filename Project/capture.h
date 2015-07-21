@@ -5,6 +5,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glfw3.h>
 #include <IL/il.h>
 #include <IL/ilu.h>
 #include <cstdio>
@@ -34,6 +35,6 @@ public:
 	}
 };
 
-void capture(const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const int g_vertex_buffer_data_size, const GLfloat g_color_buffer_data[]);
+void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const int g_vertex_buffer_data_size, const GLfloat g_color_buffer_data[]);
 
 #endif

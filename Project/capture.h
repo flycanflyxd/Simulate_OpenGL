@@ -2,6 +2,7 @@
 #define _CAPTURE_H
 
 #define GLM_SWIZZLE
+
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>

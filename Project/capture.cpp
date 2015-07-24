@@ -61,7 +61,7 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 					}
 				}
 				trianglesOnViewport.push_back(triangleOnViewport);
-				/* Draw sies. Maybe it is not necessary.
+				/* Draw sides. Maybe it is not necessary.
 				for (int j = 0; j < 3; j++)
 				{
 					glm::vec4 vector = triangleOnViewport.vertices[(j + 1) % 3] - triangleOnViewport.vertices[j % 3];

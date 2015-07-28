@@ -4,7 +4,7 @@ using namespace std;
 
 bool check = true;
 
-void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const int g_vertex_buffer_data_size, const GLfloat g_color_buffer_data[])
+void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const int g_vertex_buffer_data_size, const GLfloat g_color_buffer_data[], const int g_color_buffer_data_size)
 {
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
 	{
@@ -20,12 +20,13 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 			// Modify the coordinate
 			for (int i = 0; i < g_vertex_buffer_data_size / 3; i++)
 			{
-				triangles[i / 3].vertices[i % 3] = MVP * glm::vec4(g_vertex_buffer_data[i * 3], g_vertex_buffer_data[i * 3 + 1], g_vertex_buffer_data[i * 3 + 2], 1);
+				triangles[i / 3].vertices[i % 3].position = MVP * glm::vec4(g_vertex_buffer_data[i * 3], g_vertex_buffer_data[i * 3 + 1], g_vertex_buffer_data[i * 3 + 2], 1);
+				triangles[i / 3].vertices[i % 3].color = glm::vec3(g_color_buffer_data[i * 3], g_color_buffer_data[i * 3 + 1], g_color_buffer_data[i * 3 + 2]);
 				for (int j = 0; j < 4; j++)
 				{
-					triangles[i / 3].vertices[i % 3][j] /= triangles[i / 3].vertices[i % 3].w; // normalize the frustrum
-					triangles[i / 3].vertices[i % 3][j] += 1; // change the range from -1~1 to 0~2
-					triangles[i / 3].vertices[i % 3][j] /= 2; // compress the range from 0~2 to 0~1
+					triangles[i / 3].vertices[i % 3].position[j] /= triangles[i / 3].vertices[i % 3].position.w; // normalize the frustrum
+					triangles[i / 3].vertices[i % 3].position[j] += 1; // change the range from -1~1 to 0~2
+					triangles[i / 3].vertices[i % 3].position[j] /= 2; // compress the range from 0~2 to 0~1
 				}
 			}
 
@@ -53,11 +54,11 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 				int screenX, screenY;
 				for (int j = 0; j < 3; j++)
 				{
-					screenX = triangles[i].vertices[j].x * width, screenY = triangles[i].vertices[j].y * height;
-					triangleOnViewport.vertices[j] = glm::vec4(screenX, screenY, 0.0, 1.0);
+					screenX = triangles[i].vertices[j].position.x * width, screenY = triangles[i].vertices[j].position.y * height;
+					triangleOnViewport.vertices[j].position = glm::vec4(screenX, screenY, 0.0, 1.0);
 					for (int k = 0; k < 3; k++)
 					{
-						viewport[screenY][screenX].RGB[k] = 255;
+						viewport[screenY][screenX].RGB[k] = static_cast<unsigned char>(255 * triangles[i].vertices[j].color[k]);
 					}
 				}
 				trianglesOnViewport.push_back(triangleOnViewport);
@@ -73,17 +74,19 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 					{
 						for (int k = 0; k < 3; k++)
 						{
-							viewport[triangleOnViewport.vertices[j].y + static_cast<int>(vector.y)][triangleOnViewport.vertices[j].x + static_cast<int>(vector.x)].RGB[k] = 255;
+							viewport[triangleOnViewport.vertices[j].y + static_cast<int>(vector.y)][triangleOnViewport.vertices[j].x + static_cast<int>(vector.x)].RGB[k] = 0;
 						}
 						++scale;
 						vector = static_cast<float>(scale)* normalizedVec;
 					}
 				}*/
 			}
-
+			
 			// Do rasterization and give the color information from viewport to imData
 			vector<glm::vec3> vertices(3);
 			glm::vec3 point;
+			glm::vec2 v1, v2;
+			float area[3];
 			for (int i = 0; i < height; i++)
 			{
 				for (int j = 0; j < width; j++)
@@ -93,15 +96,24 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 					{
 						for (int l = 0; l < 3; l++)
 						{
-							vertices[l] = trianglesOnViewport[k].vertices[l].xyz();
+							vertices[l] = trianglesOnViewport[k].vertices[l].position.xyz();
 						}
 						if (glm::dot(glm::cross(vertices[1] - vertices[0], point - vertices[0]), glm::vec3(0.0, 0.0, 1.0)) >= 0.0
 							&& glm::dot(glm::cross(vertices[2] - vertices[1], point - vertices[1]), glm::vec3(0.0, 0.0, 1.0)) >= 0.0
 							&& glm::dot(glm::cross(vertices[0] - vertices[2], point - vertices[2]), glm::vec3(0.0, 0.0, 1.0)) >= 0.0)
 						{
-							viewport[i][j].RGB[0] = 255;
+							/*viewport[i][j].RGB[0] = 255;
 							viewport[i][j].RGB[1] = 255;
-							viewport[i][j].RGB[2] = 255;
+							viewport[i][j].RGB[2] = 255;*/
+							v1 = (vertices[0] - point).xy();
+							v2 = (vertices[1] - point).xy();
+							area[0] = 1 / 2 * (v1.x * v2.y - v2.x * v1.y);
+							v1 = (vertices[1] - point).xy();
+							v2 = (vertices[2] - point).xy();
+							area[1] = 1 / 2 * (v1.x * v2.y - v2.x * v1.y);
+							v1 = (vertices[2] - point).xy();
+							v2 = (vertices[0] - point).xy();
+							area[1] = 1 / 2 * (v1.x * v2.y - v2.x * v1.y);
 						}
 					}
 
@@ -118,7 +130,7 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 			ilSetData(imData);
 			ilEnable(IL_FILE_OVERWRITE);
 			ilSave(IL_PNG, "output.png");
-			cout << "Time used: " << static_cast<double>(clock() - start) / CLK_TCK << endl;
+			cout << "Time used: " << static_cast<double>(clock() - start) / CLK_TCK << " (sec)" << endl;
 		}
 	}
 }

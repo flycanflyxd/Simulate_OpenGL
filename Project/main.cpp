@@ -218,7 +218,7 @@ int main(void)
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
-		capture(window, MVP, g_vertex_buffer_data, sizeof(g_vertex_buffer_data) / sizeof(GLfloat), g_color_buffer_data);
+		capture(window, MVP, g_vertex_buffer_data, sizeof(g_vertex_buffer_data) / sizeof(GLfloat), g_color_buffer_data, sizeof(g_color_buffer_data) / sizeof(GLfloat));
 
 	} // Check if the ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&

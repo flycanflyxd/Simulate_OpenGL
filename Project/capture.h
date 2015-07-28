@@ -14,10 +14,17 @@
 #include <vector>
 #include <ctime>
 
+class vertex
+{
+public:
+	glm::vec4 position;
+	glm::vec3 color;
+};
+
 class triangle
 {
 public:
-	glm::vec4 vertices[3];
+	vertex vertices[3];
 };
 
 class pixel
@@ -36,6 +43,6 @@ public:
 	}
 };
 
-void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const int g_vertex_buffer_data_size, const GLfloat g_color_buffer_data[]);
+void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_buffer_data[], const int g_vertex_buffer_data_size, const GLfloat g_color_buffer_data[], const int g_color_buffer_data_size);
 
 #endif

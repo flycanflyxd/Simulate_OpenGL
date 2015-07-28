@@ -102,18 +102,18 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 							&& glm::dot(glm::cross(vertices[2] - vertices[1], point - vertices[1]), glm::vec3(0.0, 0.0, 1.0)) >= 0.0
 							&& glm::dot(glm::cross(vertices[0] - vertices[2], point - vertices[2]), glm::vec3(0.0, 0.0, 1.0)) >= 0.0)
 						{
-							/*viewport[i][j].RGB[0] = 255;
-							viewport[i][j].RGB[1] = 255;
-							viewport[i][j].RGB[2] = 255;*/
 							v1 = (vertices[0] - point).xy();
 							v2 = (vertices[1] - point).xy();
-							area[0] = 1 / 2 * (v1.x * v2.y - v2.x * v1.y);
+							area[0] = (v1.x * v2.y - v2.x * v1.y) / 2;
 							v1 = (vertices[1] - point).xy();
 							v2 = (vertices[2] - point).xy();
-							area[1] = 1 / 2 * (v1.x * v2.y - v2.x * v1.y);
+							area[1] = (v1.x * v2.y - v2.x * v1.y) / 2;
 							v1 = (vertices[2] - point).xy();
 							v2 = (vertices[0] - point).xy();
-							area[1] = 1 / 2 * (v1.x * v2.y - v2.x * v1.y);
+							area[2] = (v1.x * v2.y - v2.x * v1.y) / 2;
+							viewport[i][j].RGB[0] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[0] * area[1] + triangles[k].vertices[1].color[0] * area[2] + triangles[k].vertices[2].color[0] * area[0]) / (area[0] + area[1] + area[2]));
+							viewport[i][j].RGB[1] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[1] * area[1] + triangles[k].vertices[1].color[1] * area[2] + triangles[k].vertices[2].color[1] * area[0]) / (area[0] + area[1] + area[2]));
+							viewport[i][j].RGB[2] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[2] * area[1] + triangles[k].vertices[1].color[2] * area[2] + triangles[k].vertices[2].color[2] * area[0]) / (area[0] + area[1] + area[2]));
 						}
 					}
 

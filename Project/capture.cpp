@@ -17,11 +17,42 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 			glGetIntegerv(GL_VIEWPORT, viewportSize);
 			vector<triangle> vertexPositions;
 
+			// Get the texture from shader
+			GLint texWidth, texHeight, internalFormat;
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPONENTS, &internalFormat); // get internal format type of GL texture
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texWidth); // get width of GL texture
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texHeight); // get height of GL texture
+			// GL_TEXTURE_COMPONENTS and GL_INTERNAL_FORMAT are the same.
+			// just work with RGB8 and RGBA8
+			GLint numBytes = 0;
+			switch (internalFormat) // determine what type GL texture has...
+			{
+			case GL_RGB:
+				numBytes = texWidth * texHeight * 3;
+				break;
+			case GL_RGBA:
+				numBytes = texWidth * texHeight * 4;
+				break;
+			default: // unsupported type (or you can put some code to support more formats if you need)
+				break;
+			}
+			unsigned char *pixels = new unsigned char[numBytes]; // allocate image data into RAM
+			glGetTexImage(GL_TEXTURE_2D, 0, internalFormat, GL_UNSIGNED_BYTE, pixels);
+			//delete [] pixels; // when you don't need 'pixels' anymore clean a memory page to avoid memory leak.
+
 			// Modify the coordinate
 			for (int i = 0; i < g_vertex_buffer_data_size / 3; i++)
 			{
 				triangles[i / 3].vertices[i % 3].position = MVP * glm::vec4(g_vertex_buffer_data[i * 3], g_vertex_buffer_data[i * 3 + 1], g_vertex_buffer_data[i * 3 + 2], 1);
-				triangles[i / 3].vertices[i % 3].color = glm::vec3(g_color_buffer_data[i * 3], g_color_buffer_data[i * 3 + 1], g_color_buffer_data[i * 3 + 2]);
+				//triangles[i / 3].vertices[i % 3].color = glm::vec3(g_color_buffer_data[i * 3], g_color_buffer_data[i * 3 + 1], g_color_buffer_data[i * 3 + 2]);
+				int positionX = g_color_buffer_data[i * 2] * texWidth;
+				int positionY = g_color_buffer_data[i * 2 + 1] * texHeight;
+				GLfloat R = static_cast<float>(pixels[(positionY * texHeight + positionX) * 3]) / 255;
+				GLfloat G = static_cast<float>(pixels[(positionY * texHeight + positionX) * 3 + 1]) / 255;
+				GLfloat B = static_cast<float>(pixels[(positionY * texHeight + positionX) * 3 + 2]) / 255;
+				//cout << R << " " << G << " " << B << endl;
+				//system("pause");
+				triangles[i / 3].vertices[i % 3].color = glm::vec3(R, G, B);
 				for (int j = 0; j < 4; j++)
 				{
 					triangles[i / 3].vertices[i % 3].position[j] /= triangles[i / 3].vertices[i % 3].position.w; // normalize the frustrum
@@ -30,7 +61,6 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 				}
 			}
 
-			ilInit();
 			int width = viewportSize[2] - viewportSize[0], height = viewportSize[3] - viewportSize[1];
 			int bytesToUsePerPixel = 3;
 			int sizeOfByte = sizeof(unsigned char);
@@ -85,7 +115,7 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 			// Do rasterization and give the color information from viewport to imData
 			vector<glm::vec3> vertices(3);
 			glm::vec3 point;
-			glm::vec2 v1, v2;
+			glm::vec2 v1, v2, uv;
 			float area[3];
 			for (int i = 0; i < height; i++)
 			{
@@ -111,9 +141,16 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 							v1 = (vertices[2] - point).xy();
 							v2 = (vertices[0] - point).xy();
 							area[2] = (v1.x * v2.y - v2.x * v1.y) / 2;
-							viewport[i][j].RGB[0] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[0] * area[1] + triangles[k].vertices[1].color[0] * area[2] + triangles[k].vertices[2].color[0] * area[0]) / (area[0] + area[1] + area[2]));
+							/*viewport[i][j].RGB[0] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[0] * area[1] + triangles[k].vertices[1].color[0] * area[2] + triangles[k].vertices[2].color[0] * area[0]) / (area[0] + area[1] + area[2]));
 							viewport[i][j].RGB[1] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[1] * area[1] + triangles[k].vertices[1].color[1] * area[2] + triangles[k].vertices[2].color[1] * area[0]) / (area[0] + area[1] + area[2]));
-							viewport[i][j].RGB[2] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[2] * area[1] + triangles[k].vertices[1].color[2] * area[2] + triangles[k].vertices[2].color[2] * area[0]) / (area[0] + area[1] + area[2]));
+							viewport[i][j].RGB[2] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[2] * area[1] + triangles[k].vertices[1].color[2] * area[2] + triangles[k].vertices[2].color[2] * area[0]) / (area[0] + area[1] + area[2]));*/
+							uv = glm::vec2((g_color_buffer_data[6 * k] * area[1] + g_color_buffer_data[6 * k + 2] * area[2] + g_color_buffer_data[6 * k + 4] * area[0]) / (area[0] + area[1] + area[2]),
+								(g_color_buffer_data[6 * k + 1] * area[1] + g_color_buffer_data[6 * k + 3] * area[2] + g_color_buffer_data[6 * k + 5] * area[0]) / (area[0] + area[1] + area[2]));
+							int positionX = uv.x * texWidth;
+							int positionY = uv.y * texHeight;
+							viewport[i][j].RGB[0] = static_cast<unsigned char>(pixels[(positionY * texHeight + positionX) * 3]);
+							viewport[i][j].RGB[1] = static_cast<unsigned char>(pixels[(positionY * texHeight + positionX) * 3 + 1]);
+							viewport[i][j].RGB[2] = static_cast<unsigned char>(pixels[(positionY * texHeight + positionX) * 3 + 2]);
 						}
 					}
 
@@ -123,6 +160,7 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 				}
 			}
 
+			ilInit();
 			ILuint imageID = ilGenImage();
 			ilBindImage(imageID);
 			ilTexImage(width, height, 1, 3, IL_RGB, IL_UNSIGNED_BYTE, imData);

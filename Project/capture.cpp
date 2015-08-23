@@ -16,6 +16,7 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 			GLint viewportSize[4];
 			glGetIntegerv(GL_VIEWPORT, viewportSize);
 			vector<triangle> vertexPositions;
+			GLfloat R, G, B;
 
 			// Get the texture from shader
 			GLint texWidth, texHeight, internalFormat;
@@ -47,13 +48,13 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 				//triangles[i / 3].vertices[i % 3].color = glm::vec3(g_color_buffer_data[i * 3], g_color_buffer_data[i * 3 + 1], g_color_buffer_data[i * 3 + 2]);
 				int positionX = g_color_buffer_data[i * 2] * texWidth;
 				int positionY = g_color_buffer_data[i * 2 + 1] * texHeight;
-				GLfloat R = static_cast<float>(pixels[(positionY * texHeight + positionX) * 3]) / 255;
-				GLfloat G = static_cast<float>(pixels[(positionY * texHeight + positionX) * 3 + 1]) / 255;
-				GLfloat B = static_cast<float>(pixels[(positionY * texHeight + positionX) * 3 + 2]) / 255;
+				R = static_cast<float>(pixels[(positionY * texHeight + positionX) * 3]) / 255;
+				G = static_cast<float>(pixels[(positionY * texHeight + positionX) * 3 + 1]) / 255;
+				B = static_cast<float>(pixels[(positionY * texHeight + positionX) * 3 + 2]) / 255;
 				//cout << R << " " << G << " " << B << endl;
 				//system("pause");
 				triangles[i / 3].vertices[i % 3].color = glm::vec3(R, G, B);
-				for (int j = 0; j < 4; j++)
+				for (int j = 0; j < 3; j++)
 				{
 					triangles[i / 3].vertices[i % 3].position[j] /= triangles[i / 3].vertices[i % 3].position.w; // normalize the frustrum
 					triangles[i / 3].vertices[i % 3].position[j] += 1; // change the range from -1~1 to 0~2
@@ -117,6 +118,7 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 			glm::vec3 point;
 			glm::vec2 v1, v2, uv;
 			float area[3];
+			int times = 0;
 			for (int i = 0; i < height; i++)
 			{
 				for (int j = 0; j < width; j++)
@@ -134,12 +136,18 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 						{
 							v1 = (vertices[0] - point).xy();
 							v2 = (vertices[1] - point).xy();
+							v1 *= triangles[k].vertices[0].position.w;
+							v2 *= triangles[k].vertices[1].position.w;
 							area[0] = (v1.x * v2.y - v2.x * v1.y) / 2;
 							v1 = (vertices[1] - point).xy();
 							v2 = (vertices[2] - point).xy();
+							v1 *= triangles[k].vertices[1].position.w;
+							v2 *= triangles[k].vertices[2].position.w;
 							area[1] = (v1.x * v2.y - v2.x * v1.y) / 2;
 							v1 = (vertices[2] - point).xy();
 							v2 = (vertices[0] - point).xy();
+							v1 *= triangles[k].vertices[2].position.w;
+							v2 *= triangles[k].vertices[0].position.w;
 							area[2] = (v1.x * v2.y - v2.x * v1.y) / 2;
 							/*viewport[i][j].RGB[0] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[0] * area[1] + triangles[k].vertices[1].color[0] * area[2] + triangles[k].vertices[2].color[0] * area[0]) / (area[0] + area[1] + area[2]));
 							viewport[i][j].RGB[1] = static_cast<unsigned char>(255.0 * (triangles[k].vertices[0].color[1] * area[1] + triangles[k].vertices[1].color[1] * area[2] + triangles[k].vertices[2].color[1] * area[0]) / (area[0] + area[1] + area[2]));
@@ -148,9 +156,45 @@ void capture(GLFWwindow* &window, const glm::mat4 &MVP, const GLfloat g_vertex_b
 								(g_color_buffer_data[6 * k + 1] * area[1] + g_color_buffer_data[6 * k + 3] * area[2] + g_color_buffer_data[6 * k + 5] * area[0]) / (area[0] + area[1] + area[2]));
 							int positionX = uv.x * texWidth;
 							int positionY = uv.y * texHeight;
-							viewport[i][j].RGB[0] = static_cast<unsigned char>(pixels[(positionY * texHeight + positionX) * 3]);
-							viewport[i][j].RGB[1] = static_cast<unsigned char>(pixels[(positionY * texHeight + positionX) * 3 + 1]);
-							viewport[i][j].RGB[2] = static_cast<unsigned char>(pixels[(positionY * texHeight + positionX) * 3 + 2]);
+							R = pixels[(positionY * texHeight + positionX) * 3];
+							G = pixels[(positionY * texHeight + positionX) * 3 + 1];
+							B = pixels[(positionY * texHeight + positionX) * 3 + 2];
+							times++;
+							if (positionY + 1 < height)
+							{
+								R += pixels[((positionY + 1) * texHeight + positionX) * 3];
+								G += pixels[((positionY + 1) * texHeight + positionX) * 3 + 1];
+								B += pixels[((positionY + 1) * texHeight + positionX) * 3 + 2];
+								times++;
+							}
+							if (positionY - 1 >= 0)
+							{
+								R += pixels[((positionY - 1) * texHeight + positionX) * 3];
+								G += pixels[((positionY - 1) * texHeight + positionX) * 3 + 1];
+								B += pixels[((positionY - 1) * texHeight + positionX) * 3 + 2];
+								times++;
+							}
+							if (positionX - 1 >= 0)
+							{
+								R += pixels[(positionY * texHeight + positionX - 1) * 3];
+								G += pixels[(positionY * texHeight + positionX - 1) * 3 + 1];
+								B += pixels[(positionY * texHeight + positionX - 1) * 3 + 2];
+								times++;
+							}
+							if (positionX + 1 < width)
+							{
+								R += pixels[(positionY * texHeight + positionX + 1) * 3];
+								G += pixels[(positionY * texHeight + positionX + 1) * 3 + 1];
+								B += pixels[(positionY * texHeight + positionX + 1) * 3 + 2];
+								times++;
+							}
+							R /= times;
+							G /= times;
+							B /= times;
+							viewport[i][j].RGB[0] = static_cast<unsigned char>(R);
+							viewport[i][j].RGB[1] = static_cast<unsigned char>(G);
+							viewport[i][j].RGB[2] = static_cast<unsigned char>(B);
+							times = 0;
 						}
 					}
 

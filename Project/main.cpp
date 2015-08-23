@@ -84,6 +84,7 @@ int main(void)
 
 	// Load the texture using any two methods
 	GLuint Texture = loadBMP_custom("wood.bmp");
+	//GLuint Texture = loadBMP_custom("uvtemplate.bmp");
 	//GLuint Texture = loadDDS("uvtemplate.DDS");
 
 	// Get a handle for our "myTextureSampler" uniform
@@ -211,11 +212,11 @@ int main(void)
 		0.0f, 0.0f,
 		1.0f, 1.0f,
 		0.0f, 1.0f,
-		1.0f, 1.0f,
 		1.0f, 0.0f,
+		1.0f, 1.0f,
 		0.0f, 1.0f,
 		1.0f, 0.0f,
-		1.0f, 1.0f,
+		0.0f, 1.0f,
 		0.0f, 0.0f,
 		1.0f, 0.0f,
 		0.0f, 0.0f,

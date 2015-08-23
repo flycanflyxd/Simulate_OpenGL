@@ -12,7 +12,7 @@ GLFWwindow* window;
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-using namespace glm;
+#include <glm/gtx/euler_angles.hpp>
 
 #include "common/shader.hpp"
 #include "common/texture.hpp"
@@ -255,6 +255,11 @@ int main(void)
 		glBindTexture(GL_TEXTURE_2D, Texture);
 		// Set our "myTextureSampler" sampler to user Texture Unit 0
 		glUniform1i(TextureID, 0);
+
+		// Rotation
+		glm::mat4 RotationMatrix = glm::eulerAngleYXZ(0.01, 0.0, 0.0);
+		Model = RotationMatrix * Model;
+		MVP = Projection * View * Model;
 
 		// 1rst attribute buffer : vertices
 		glEnableVertexAttribArray(0);
